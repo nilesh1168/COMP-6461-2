@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ServerUtil {
@@ -25,7 +26,8 @@ public class ServerUtil {
 		
 	}
 
-	public static HttpServer optionsParser(List<String> args) {
+	public static HttpServer optionsParser(List<String> subList) {
+		ArrayList<String> args = new ArrayList<>(subList);
 		boolean verbose = false;
 		int port = 0;
 		String directory = "";
@@ -47,7 +49,7 @@ public class ServerUtil {
             args.remove(directory);
         }
         
-        return new HttpServer(args.get(0), port, verbose, directory);
+        return new HttpServer(verbose, directory, port);
 	}
 
 	public static String getRequest(SocketChannel connection) throws IOException {
