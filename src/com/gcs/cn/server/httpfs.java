@@ -4,6 +4,8 @@ import java.util.List;
 
 public class httpfs {
 
+	public static String directory;
+
 	public static void main(String[] args) {
 		if(args.length == 1 && args[0].equals("help")){
             ServerUtil.displayHelpInfo();

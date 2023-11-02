@@ -1,5 +1,6 @@
 package com.gcs.cn.server;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
@@ -73,6 +74,97 @@ public class ServerUtil {
             }
         }
         return b.toString();
+	}
+
+	public static String parseAndReturnResponse(String request) {
+		// TODO Auto-generated method stub
+		/*
+	        * GET /hello.txt? HTTP/1.1
+	        Host: localhost
+	        User-Agent: Concordia-HTTP/1.0
+	        Accept: application/xml
+	        * */
+	        String[] requestArr = request.split("\r\n\r\n");
+	        String[] headers = requestArr[0].split("\r\n");
+	        
+
+	        //GET /hello.txt? HTTP/1.1
+	        String requestTypeAndUrl = headers[0];
+	        String[] requestTypeAndUrlArr = requestTypeAndUrl.split(" ");
+	        String requestType = requestTypeAndUrlArr[0];
+	        parseUrl(requestTypeAndUrlArr[1]);
+
+	        if(requestArr.length > 1){
+	            HttpRequestHandler.body = requestArr[1];
+	        }
+
+
+	        for (String header: headers) {
+	            if(header.contains("application/json")){
+	            	HttpRequestHandler.format = "application/json";
+	                break;
+	            }else if(header.contains("text/html")){
+	            	HttpRequestHandler.format = "text/html";
+	                break;
+	            }else if(header.contains("application/xml")){
+	            	HttpRequestHandler.format = "application/xml";
+	                break;
+	            }
+	        }
+
+	        if(requestType.equals("GET")){
+	            //isGet = true;
+	            return HttpRequestHandler.getHandler();
+	        }else if(requestType.equals("POST")){
+	           // isPost = true;
+	            //return HttpRequestHandler.postHandler();
+	        }
+
+	        return "Unknown HTTP Method Specified";
+	}
+
+	private static void parseUrl(String string) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public static void getFiles(String directory, List<File> files, List<String> fileNames) {
+		// TODO Auto-generated method stub
+		File dir = new File(directory);
+        File[] fileArr= dir.listFiles();
+        if(fileArr != null){
+            files.addAll(List.of(fileArr));
+            for (File f :fileArr) {
+                fileNames.add(f.getName());
+            }
+        }
+
+
+        if (fileArr != null && fileArr.length > 0) {
+            for (File file : fileArr) {
+                // Check if the file is a directory
+                if (file.isDirectory()) {
+                    // We will not print the directory name, just use it as a new
+                    // starting point to list files from
+                    getFiles(file.getAbsolutePath(), files, fileNames);
+                } else {
+                    // We can use .length() to get the file size
+                    System.out.println(file.getName() + " (size in bytes: " + file.length()+")");
+                }
+            }
+        }
+    }
+
+	public static String toJSONString(List<String> fileNames) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public static String responseGenerator(int i, String body, Object object) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+		
 	}
 
 }
