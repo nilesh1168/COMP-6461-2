@@ -2,7 +2,10 @@ package com.gcs.cn.server;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -11,14 +14,15 @@ import java.util.List;
 public class HttpRequestHandler implements Runnable {
 
 	private SocketChannel connection;
-	private final Object lock;
-	private String format = "text/plain";
-	private String body;
-    private String path = "/";
+	private static Object lock;
+	static String format = "text/plain";
+	static String body;
+    static String path = "/";
+	public static String query;
 
 	public HttpRequestHandler(SocketChannel connection, Object lock) {
         this.connection = connection;
-        this.lock = lock;
+        HttpRequestHandler.lock = lock;
     }
 	
 	@Override
@@ -32,10 +36,13 @@ public class HttpRequestHandler implements Runnable {
         System.out.println("--------------------------------");
         
         try {
-			System.out.println(ServerUtil.getRequest(connection));
 			String request = ServerUtil.getRequest(connection);
 		
 			String response = ServerUtil.parseAndReturnResponse(request);
+			
+			System.out.println(response);
+
+			connection.write(ByteBuffer.wrap(response.getBytes()));
 			
 			
 		} catch (IOException e) {
@@ -126,8 +133,49 @@ public class HttpRequestHandler implements Runnable {
 	            }
 
 	        }
+	}
 
-		return null;
+	public static String postHandler() {
+		List<File> files = new ArrayList<>();
+        List<String> fileNames = new ArrayList<>();
+        ServerUtil.getFiles(httpfs.directory, files, fileNames);
+
+        if(!path.isEmpty() && path.equals("/")){
+            body = "404 Error.\n" +
+                    "We cannot create a file without a name.\n";
+            return ServerUtil.responseGenerator(404, body, null);
+        } else if (path.split("/").length >= 3) {
+            body = "401 Unauthorized.\n" +
+                    "The requested URL " + path + " cannot be accessed.\n" +
+                    "The requested file is located outside the working directory.";
+            return ServerUtil.responseGenerator(401, body, null);
+        }else {
+            String fileName = path.split("/")[1];
+
+            //File exists
+            if(fileNames.contains(fileName)){
+                if(query != null && query.contains("overwrite=true")){
+                    synchronized (lock){
+                    	ServerUtil.createAndWriteToFile(fileName, body, false);
+                        body = "File has been successfully overwritten";
+                        return ServerUtil.responseGenerator(204, body, null);
+                    }
+                }else{
+                    synchronized (lock){
+                    	ServerUtil.createAndWriteToFile(fileName, body, true);
+                        body = "File has been successfully updated";
+                        return ServerUtil.responseGenerator(204, body, null);
+                    }
+                }
+            }else { //File Doesn't already exist
+                synchronized (lock){
+                	ServerUtil.createAndWriteToFile(fileName, body, false);
+                    body = "File has been successfully created";
+                    return ServerUtil.responseGenerator(201, body, null);
+                }
+            }
+
+        }
 	}
 
 }

@@ -1,11 +1,16 @@
 package com.gcs.cn.server;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +51,7 @@ public class ServerUtil {
         if(args.contains("-d")){
             int index = args.indexOf("-d");
             args.remove("-d");
-            directory = args.get(index);
+            httpfs.directory = args.get(index);
             args.remove(directory);
         }
         
@@ -117,15 +122,18 @@ public class ServerUtil {
 	            return HttpRequestHandler.getHandler();
 	        }else if(requestType.equals("POST")){
 	           // isPost = true;
-	            //return HttpRequestHandler.postHandler();
+	            return HttpRequestHandler.postHandler();
 	        }
 
 	        return "Unknown HTTP Method Specified";
 	}
 
-	private static void parseUrl(String string) {
-		// TODO Auto-generated method stub
-		
+	private static void parseUrl(String urlString) {
+		String[] urlArr = urlString.split("\\?");
+        if(urlArr.length >=  1)
+        	HttpRequestHandler.path = urlArr[0];
+        if(urlArr.length > 1)
+        	HttpRequestHandler.query = urlArr[1];
 	}
 
 	public static void getFiles(String directory, List<File> files, List<String> fileNames) {
@@ -149,22 +157,75 @@ public class ServerUtil {
                     getFiles(file.getAbsolutePath(), files, fileNames);
                 } else {
                     // We can use .length() to get the file size
-                    System.out.println(file.getName() + " (size in bytes: " + file.length()+")");
+//                    System.out.println(file.getName() + " (size in bytes: " + file.length()+")");
                 }
             }
         }
     }
 
 	public static String toJSONString(List<String> fileNames) {
-		// TODO Auto-generated method stub
-		return null;
+		StringBuilder b = new StringBuilder();
+        b.append("[");
+        for (String file: fileNames) {
+            b.append("\"");
+            b.append(file);
+            b.append("\"");
+        }
+        b.append("]");
+        return b.toString();
 	}
 
-	public static String responseGenerator(int i, String body, Object object) {
-		// TODO Auto-generated method stub
-		return null;
+	public static String responseGenerator(int code, String body, Object contentDisposition) {
+		StringBuilder b = new StringBuilder();
+        if(code == 200){
+            b.append("HTTP/1.1 200 OK\r\n");
+        }else if(code == 201){
+            b.append("HTTP/1.1 201 Created\r\n");
+        }else if (code == 204){
+            b.append("HTTP/1.1 204 No Content\r\n");
+        } else if (code == 401) {
+            b.append("HTTP/1.1 401 Unauthorized\r\n");
+        } else if (code == 404) {
+            b.append("HTTP/1.1 404 Not Found\r\n");
+        }
+
+        b.append("Date: ").append(LocalDateTime.now()).append("\r\n");
+        if(contentDisposition != null){
+            b.append("Content-Type: text/plain\r\n");
+            b.append(contentDisposition).append("\r\n");
+        }else{
+            b.append("Content-Type: text/html\r\n");
+        }
+        b.append("Content-Length: ").append(body.getBytes(StandardCharsets.UTF_8).length).append("\r\n");
+        b.append("Server: httpfs/1.0\r\n");
+
+
+        if(code == 201){
+            b.append("Location: ").append(HttpRequestHandler.path).append("\r\n");
+        }
+        b.append("\r\n");
+        b.append(body);
+
+        return b.toString();
 	}
+
+	public static void createAndWriteToFile(String fileName, String fileBody, boolean append) {
+		try {
+            Path directoryPath = Files.createDirectories(Paths.get(httpfs.directory));
+            Path filePath = Paths.get(httpfs.directory + "/" + fileName);
+            Path file;
+            if (!Files.exists(filePath)) {
+                file = Files.createFile(filePath);
+            } else {
+                file = filePath;
+            }
+            FileWriter fileWriter = new FileWriter(file.toString(), append);
+            fileWriter.write(fileBody);
+            fileWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 		
 	}
-
+		
 }
