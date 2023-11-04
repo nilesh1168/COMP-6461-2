@@ -100,11 +100,16 @@ public class HttpRequestHandler implements Runnable {
 				break;
 			}
 			return ServerUtil.responseGenerator(200, body, null);
-		} else if (path.split("/").length >= 3 || !checkPermission(httpfs.directory + path)) {
+		} else if (path.split("/").length >= 3) {
 			body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
 					+ "The requested file is located outside the working directory.";
 			return ServerUtil.responseGenerator(401, body, null);
-		} else {
+		} else if(!checkPermission(httpfs.directory + path)) {
+			body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
+					+ "The requested file does not have sufficient permissions.";
+			return ServerUtil.responseGenerator(401, body, null);
+		}
+		else {
 			String fileName = path.split("/")[1];
 			String contentDisposition = null;
 			if (fileNames.contains(fileName) || fileNames.contains(fileName + ".txt")) {
@@ -157,11 +162,16 @@ public class HttpRequestHandler implements Runnable {
 		if (!path.isEmpty() && path.equals("/")) {
 			body = "404 Error.\n" + "We cannot create a file without a name.\n";
 			return ServerUtil.responseGenerator(404, body, null);
-		} else if (path.split("/").length >= 3 || !checkPermission(httpfs.directory + path)) {
+		} else if (path.split("/").length >= 3) {
 			body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
 					+ "The requested file is located outside the working directory.";
 			return ServerUtil.responseGenerator(401, body, null);
-		} else {
+		} else if(!checkPermission(httpfs.directory + path)) {
+			body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
+					+ "The requested file does not have sufficient permissions.";
+			return ServerUtil.responseGenerator(401, body, null);
+		}
+		else {
 			String fileName = path.split("/")[1];
 
 			// File exists
