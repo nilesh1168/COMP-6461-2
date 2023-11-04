@@ -118,10 +118,12 @@ public class ServerUtil {
 	        }
 
 	        if(requestType.equals("GET")){
-	            //isGet = true;
+	        	HttpRequestHandler.isGet = true;
+	        	HttpRequestHandler.isPost = false;
 	            return HttpRequestHandler.getHandler();
 	        }else if(requestType.equals("POST")){
-	           // isPost = true;
+	        	HttpRequestHandler.isPost = true;
+	        	HttpRequestHandler.isGet = false;
 	            return HttpRequestHandler.postHandler();
 	        }
 
