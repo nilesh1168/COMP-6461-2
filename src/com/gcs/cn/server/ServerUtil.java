@@ -59,6 +59,11 @@ public class ServerUtil {
 	}
 
 	public static String getRequest(SocketChannel connection) throws IOException {
+		if(HttpServer.verbose) {
+			System.out.println("Verbose: True");
+			System.out.println("Working directory: "+httpfs.directory);
+		}
+		
 		StringBuilder b = new StringBuilder();
         Charset utf8 = StandardCharsets.UTF_8;
         ByteBuffer buf = ByteBuffer.allocate(1024);
@@ -120,10 +125,14 @@ public class ServerUtil {
 	        }
 
 	        if(requestType.equals("GET")){
+	        	if(HttpServer.verbose)
+	        		System.out.println("Request-Type: GET");
 	        	HttpRequestHandler.isGet = true;
 	        	HttpRequestHandler.isPost = false;
 	            return HttpRequestHandler.getHandler();
 	        }else if(requestType.equals("POST")){
+	        	if(HttpServer.verbose)
+	        		System.out.println("Request-Type: POST");
 	        	HttpRequestHandler.isPost = true;
 	        	HttpRequestHandler.isGet = false;
 	            return HttpRequestHandler.postHandler();
@@ -133,6 +142,8 @@ public class ServerUtil {
 	}
 
 	private static void parseUrl(String urlString) {
+		if(HttpServer.verbose)
+			System.out.println("ServerUtil.parseUrl()");
 		String[] urlArr = urlString.split("\\?");
         if(urlArr.length >=  1)
         	HttpRequestHandler.path = urlArr[0];
@@ -141,8 +152,11 @@ public class ServerUtil {
 	}
 
 	public static void getFiles(String directory, List<File> files, List<String> fileNames) {
-		// TODO Auto-generated method stub
+		if(HttpServer.verbose)
+			System.out.println("ServerUtil.getFiles()");
+
 		File dir = new File(directory);
+		
         File[] fileArr= dir.listFiles();
         if(fileArr != null){
             files.addAll(List.of(fileArr));
@@ -151,23 +165,20 @@ public class ServerUtil {
             }
         }
 
-
         if (fileArr != null && fileArr.length > 0) {
             for (File file : fileArr) {
                 // Check if the file is a directory
                 if (file.isDirectory()) {
-                    // We will not print the directory name, just use it as a new
-                    // starting point to list files from
                     getFiles(file.getAbsolutePath(), files, fileNames);
-                } else {
-                    // We can use .length() to get the file size
-//                    System.out.println(file.getName() + " (size in bytes: " + file.length()+")");
                 }
             }
         }
     }
 
 	public static String toJSONString(List<String> fileNames) {
+		if(HttpServer.verbose)
+			System.out.println("ServerUtil.toJSONString()");
+		
 		StringBuilder b = new StringBuilder();
         b.append("[ \"files\":\"");
         for (String file: fileNames) {
@@ -179,6 +190,9 @@ public class ServerUtil {
 	}
 
 	public static String responseGenerator(int code, String body, Object contentDisposition) {
+		if(HttpServer.verbose)
+			System.out.println("ServerUtil.responseGenerator()");
+		
 		StringBuilder b = new StringBuilder();
         if(code == 200){
             b.append("HTTP/1.1 200 OK\r\n");
@@ -213,6 +227,9 @@ public class ServerUtil {
 	}
 
 	public static void createAndWriteToFile(String fileName, String fileBody, boolean append) {
+		if(HttpServer.verbose)
+			System.out.println("ServerUtil.createAndWriteToFile()");
+		
 		try {
             Path filePath = Paths.get(httpfs.directory + "/" + fileName);
             Path file;
@@ -232,6 +249,9 @@ public class ServerUtil {
 	
 	
 	static boolean checkPermission(String filePath, boolean isPost) {
+		if(HttpServer.verbose)
+			System.out.println("ServerUtil.checkPermission()");
+		
 		Path p = Paths.get(filePath);
 		if (isPost) {			
 			if (Files.isWritable(p))

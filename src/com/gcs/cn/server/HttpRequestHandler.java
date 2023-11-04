@@ -143,6 +143,9 @@ public class HttpRequestHandler implements Runnable {
 
 
 	public static String postHandler() {
+		if(HttpServer.verbose)
+			System.out.println("HttpRequestHandler.postHandler()");
+		
 		List<File> files = new ArrayList<>();
 		List<String> fileNames = new ArrayList<>();
 		ServerUtil.getFiles(httpfs.directory, files, fileNames);
@@ -160,6 +163,8 @@ public class HttpRequestHandler implements Runnable {
 
 			// File exists
 			if (fileNames.contains(fileName)) {
+				if(HttpServer.verbose)
+					System.out.println("File already exists. Performing operations...");
 				if(!ServerUtil.checkPermission(httpfs.directory + path, isPost)) {
 					body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
 							+ "The requested file does not have sufficient permissions.";
@@ -192,6 +197,8 @@ public class HttpRequestHandler implements Runnable {
 				}
 			} else { // File Doesn't already exist
 				synchronized (lock) {
+					if(HttpServer.verbose)
+						System.out.println("File does not exist. Creating new file...");
 					ServerUtil.createAndWriteToFile(fileName, body, false);
 					body = "File has been successfully created";
 					return ServerUtil.responseGenerator(201, body, null);

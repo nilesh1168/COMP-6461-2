@@ -7,7 +7,7 @@ import java.nio.channels.SocketChannel;
 
 public class HttpServer implements Runnable{
     static int port = 8080;
-    boolean verbose;
+    static boolean verbose;
     String directory;
     Object lock = new Object();
 
@@ -17,7 +17,7 @@ public class HttpServer implements Runnable{
     	if(port > 0)
     		HttpServer.port = port;
     		
-        this.verbose = verbose;
+        HttpServer.verbose = verbose;
         this.directory = directory;
     }
 
