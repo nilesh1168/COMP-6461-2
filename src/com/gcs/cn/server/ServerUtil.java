@@ -17,7 +17,7 @@ import java.util.List;
 public class ServerUtil {
 
 	public static void displayHelpInfo() {
-		String helpInfo = "nhttpfs is a simple file server.\n" +
+		String helpInfo = "httpfs is a simple file server.\n" +
                 "\n" +
                 "    Usage:\n" +
                 "        httpfs [-v] [-p PORT] [-d PATH-TO-DIR]\n" +
@@ -114,6 +114,8 @@ public class ServerUtil {
 	            }else if(header.contains("application/xml")){
 	            	HttpRequestHandler.format = "application/xml";
 	                break;
+	            }else {
+	            	HttpRequestHandler.format = "text/plain";
 	            }
 	        }
 
@@ -167,13 +169,12 @@ public class ServerUtil {
 
 	public static String toJSONString(List<String> fileNames) {
 		StringBuilder b = new StringBuilder();
-        b.append("[");
+        b.append("[ \"files\":\"");
         for (String file: fileNames) {
-            b.append("\"");
             b.append(file);
-            b.append("\"");
+            b.append("\n");
         }
-        b.append("]");
+        b.append("\"]");
         return b.toString();
 	}
 
@@ -205,7 +206,7 @@ public class ServerUtil {
         if(code == 201){
             b.append("Location: ").append(HttpRequestHandler.path).append("\r\n");
         }
-        b.append("\r\n");
+        b.append("\r\n\r\n");
         b.append(body);
 
         return b.toString();
@@ -213,7 +214,6 @@ public class ServerUtil {
 
 	public static void createAndWriteToFile(String fileName, String fileBody, boolean append) {
 		try {
-            Path directoryPath = Files.createDirectories(Paths.get(httpfs.directory));
             Path filePath = Paths.get(httpfs.directory + "/" + fileName);
             Path file;
             if (!Files.exists(filePath)) {
@@ -228,6 +228,21 @@ public class ServerUtil {
             e.printStackTrace();
         }
 		
+	}
+	
+	
+	static boolean checkPermission(String filePath, boolean isPost) {
+		Path p = Paths.get(filePath);
+		if (isPost) {			
+			if (Files.isWritable(p))
+				return true;
+		}
+		else{			
+			if (Files.isReadable(p))
+				return true;
+		}
+
+		return false;
 	}
 		
 }

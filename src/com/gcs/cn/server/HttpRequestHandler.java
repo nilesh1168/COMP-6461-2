@@ -1,13 +1,11 @@
 package com.gcs.cn.server;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,7 +65,6 @@ public class HttpRequestHandler implements Runnable {
 
 		body = "";
 
-		String[] pathArr = path.split("/");
 		if (!path.isEmpty() && path.equals("/")) {
 			switch (format) {
 			case "application/json":
@@ -104,16 +101,16 @@ public class HttpRequestHandler implements Runnable {
 			body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
 					+ "The requested file is located outside the working directory.";
 			return ServerUtil.responseGenerator(401, body, null);
-		} else if(!checkPermission(httpfs.directory + path)) {
-			body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
-					+ "The requested file does not have sufficient permissions.";
-			return ServerUtil.responseGenerator(401, body, null);
 		}
 		else {
 			String fileName = path.split("/")[1];
 			String contentDisposition = null;
 			if (fileNames.contains(fileName) || fileNames.contains(fileName + ".txt")) {
-				String fileContent;
+				if(!ServerUtil.checkPermission(httpfs.directory + path, isPost)) {
+					body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
+							+ "The requested file does not have sufficient permissions.";
+					return ServerUtil.responseGenerator(401, body, null);
+				}
 				if (!fileName.contains(".txt")) {
 					fileName = fileName + ".txt";
 				}
@@ -129,6 +126,10 @@ public class HttpRequestHandler implements Runnable {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				if(body.isEmpty()) {
+					body = "No content in file";
+					return ServerUtil.responseGenerator(204, body, contentDisposition);
+				}
 				return ServerUtil.responseGenerator(200, body, contentDisposition);
 			} else {
 				body = "404. There is an error.\n";
@@ -140,19 +141,6 @@ public class HttpRequestHandler implements Runnable {
 		}
 	}
 
-	private static boolean checkPermission(String filePath) {
-		Path p = Paths.get(filePath);
-		if (isPost) {			
-			if (Files.isWritable(p))
-				return true;
-		}
-		else{			
-			if (Files.isReadable(p))
-				return true;
-		}
-
-		return false;
-	}
 
 	public static String postHandler() {
 		List<File> files = new ArrayList<>();
@@ -166,27 +154,40 @@ public class HttpRequestHandler implements Runnable {
 			body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
 					+ "The requested file is located outside the working directory.";
 			return ServerUtil.responseGenerator(401, body, null);
-		} else if(!checkPermission(httpfs.directory + path)) {
-			body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
-					+ "The requested file does not have sufficient permissions.";
-			return ServerUtil.responseGenerator(401, body, null);
 		}
 		else {
 			String fileName = path.split("/")[1];
 
 			// File exists
 			if (fileNames.contains(fileName)) {
+				if(!ServerUtil.checkPermission(httpfs.directory + path, isPost)) {
+					body = "401 Unauthorized.\n" + "The requested URL " + path + " cannot be accessed.\n"
+							+ "The requested file does not have sufficient permissions.";
+					return ServerUtil.responseGenerator(401, body, null);
+				}
 				if (query != null && query.contains("overwrite=true")) {
 					synchronized (lock) {
-						ServerUtil.createAndWriteToFile(fileName, body, false);
-						body = "File has been successfully overwritten";
-						return ServerUtil.responseGenerator(204, body, null);
+						if(body!=null) {							
+							ServerUtil.createAndWriteToFile(fileName, body, false);
+							body = "File has been successfully overwritten";
+							return ServerUtil.responseGenerator(204, body, null);
+						}
+						else {
+							body = "No data to write in the file";
+							return ServerUtil.responseGenerator(204, body, null);
+						}
 					}
 				} else {
 					synchronized (lock) {
-						ServerUtil.createAndWriteToFile(fileName, body, true);
-						body = "File has been successfully updated";
-						return ServerUtil.responseGenerator(204, body, null);
+						if(body!=null) {							
+							ServerUtil.createAndWriteToFile(fileName, body, false);
+							body = "File has been successfully updated";
+							return ServerUtil.responseGenerator(204, body, null);
+						}
+						else {
+							body = "No data to write in the file";
+							return ServerUtil.responseGenerator(204, body, null);
+						}
 					}
 				}
 			} else { // File Doesn't already exist
