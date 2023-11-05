@@ -25,7 +25,7 @@ cURL like command implementation
   - "java httpfs -v -p 5047 -d ./NewDir"
 
 
-- Use the following commands in the client to test the server: 
+- Use the following commands in the client to test the server in the bin directory of the client(httpc) application : 
 
   - java com.gcs.cn.httpc get "http://localhost:8080"
   - java com.gcs.cn.httpc get "http://localhost:8080" -h "Accept: application/xml"
