@@ -40,12 +40,11 @@ public class HttpRequestHandler implements Runnable {
 
 			String response = ServerUtil.parseAndReturnResponse(request);
 
-			System.out.println(response);
-
 			connection.write(ByteBuffer.wrap(response.getBytes()));
+			
+			System.out.println("Request Completed");
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			try {
